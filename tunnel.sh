@@ -899,7 +899,9 @@ try {
     else
         gh_ver="404: Not Found"
     fi
-} catch {
+} 
+
+catch {
     append "$error" "$error_file"
     gh_ver="$version"
 }
