@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Set your Telegram bot token
+TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
+
+# Function to start Cloudflared
+cloudflared_start() {
+    # Command to start Cloudflared with your configuration
+    cloudflared tunnel run --config cloudflared-config.yaml
+}
+
+# Create a Telegram bot command handler
+handle_telegram_command() {
+    local chat_id="$1"
+    local command="$2"
+
+    case "$command" in
+        "/start")
+            # Respond to the /start command
+            send_telegram_message "$chat_id" "Welcome to your Cloudflared server control! You can start the server with /startserver."
+            ;;
+        "/startserver")
+            # Start the Cloudflared server
+            send_telegram_message "$chat_id" "Starting the Cloudflared server..."
+            cloudflared_start
+            ;;
+        "/stopserver")
+            # Stop the Cloudflared server (add stop logic here)
+            send_telegram_message "$chat_id" "Stopping the Cloudflared server..."
+            # Implement logic to stop the server
+            ;;
+        *)
+            # Handle other commands or responses
+            send_telegram_message "$chat_id" "Unknown command: $command"
+            ;;
+    esac
+}
+
+# Function to send a message to Telegram
+send_telegram_message() {
+    local chat_id="$1"
+    local message="$2"
+
+    # Use the Telegram Bot API to send a message
+    curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+        -d "chat_id=$chat_id" \
+        -d "text=$message"
+}
+
+# Main loop to listen for Telegram messages
+main() {
+    while true; do
+        # Use the Telegram Bot API to get updates
+        update=$(curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates?offset=-1")
+
+        # Parse the update to get the chat ID and message text
+        chat_id=$(echo "$update" | jq -r '.result[0].message.chat.id')
+        message_text=$(echo "$update" | jq -r '.result[0].message.text')
+
+        # Handle the received command
+        handle_telegram_command "$chat_id" "$message_text"
+    done
+}
+
+# Start the main loop
+main
+
